@@ -602,8 +602,8 @@ void menuLoop(void) {
     drawWave(2, menuTimer, themeCurrent.frontWaveColor, 280, 4.0, -2.5);
     menuTimer += 0.05;
 
-    drawImage(40, 20, 140, 60, themeCurrent.hbmenuLogoImage, IMAGE_MODE_RGBA32);
-    DrawText(interuiregular14, 180, 46 + 18, themeCurrent.textColor, VERSION);
+    drawImage(40, 20, 129, 60, themeCurrent.hbmenuLogoImage, IMAGE_MODE_RGBA32);
+    DrawText(interuiregular14, 169, 46 + 18, themeCurrent.textColor, VERSION);
 
     #ifdef PERF_LOG_DRAW//Seperate from the PERF_LOG define since this might affect perf.
     extern u64 g_tickdiff_frame;
