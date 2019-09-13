@@ -104,7 +104,7 @@ void menuHandleAButton(void) {
 
 void menuHandleXButton(void) {
     menu_s* menu = menuGetCurrent();
-    
+
     if (menu->nEntries > 0 && hbmenu_state == HBMENU_DEFAULT) {
         int i;
         menuEntry_s* me;
@@ -118,7 +118,7 @@ void launchApplyThemeTask(menuEntry_s* arg) {
     const char* themePath = arg->path;
     SetThemePathToConfig(themePath);
     themeStartup(themeGlobalPreset);
-    computeFrontGradient(themeCurrent.frontWaveColor, 280); 
+    computeFrontGradient(themeCurrent.frontWaveColor, 280);
 }
 
 bool menuIsNetloaderActive(void) {
@@ -291,9 +291,9 @@ static void drawEntry(menuEntry_s* me, int off_x, int is_active) {
     }
 
     if (is_active && largeimg) {
-        drawImage(117, 100, 256, 256, largeimg, IMAGE_MODE_RGB24);
+        drawImage(117, 100+10, 256, 256, largeimg, IMAGE_MODE_RGB24);
 
-        shadow_start_y = 100+256;
+        shadow_start_y = 100+10+256;
         border_start_x = 117;
         border_end_x = 117+256;
 
@@ -321,7 +321,7 @@ static void drawEntry(menuEntry_s* me, int off_x, int is_active) {
 
     if (is_active) {
         start_x = 1280 - 790;
-        start_y = 135;
+        start_y = 135+10;
 
         DrawTextTruncate(interuimedium30, start_x, start_y + 39, themeCurrent.textColor, tmpstr, 1280 - start_x - 120 ,"...");
 
@@ -471,13 +471,13 @@ void drawCharge() {
     bool validPower;
 
     validPower = powerGetDetails(&batteryCharge, &isCharging);
-    
+
     if (validPower)
     {
         batteryCharge = (batteryCharge > 100) ? 100 : batteryCharge;
 
         sprintf(chargeString, "%d%%", batteryCharge);
-        
+
         int tmpX = GetTextXCoordinate(interuiregular14, 1180 - 10, chargeString, 'r');
 
         DrawText(interuiregular14, tmpX - 24 - 8, 0 + 47 + 10 + 21 + 4, themeCurrent.textColor, chargeString);
@@ -496,7 +496,7 @@ void drawNetwork(int tmpX) {
     }
 }
 
-void drawStatus() {
+u32 drawStatus() {
 
     char timeString[9];
 
@@ -509,12 +509,14 @@ void drawStatus() {
 
     sprintf(timeString, "%02d:%02d:%02d", hours, minutes, seconds);
 
-    int tmpX = GetTextXCoordinate(interuimedium20, 1180, timeString, 'r');
+    u32 tmpX = GetTextXCoordinate(interuimedium20, 1180, timeString, 'r');
 
     DrawText(interuimedium20, tmpX, 0 + 47 + 10, themeCurrent.textColor, timeString);
 
     drawCharge();
     drawNetwork(tmpX);
+
+    return tmpX;
 }
 
 void drawButtons(menu_s* menu, bool emptyDir, int *x_image_out) {
@@ -602,8 +604,31 @@ void menuLoop(void) {
     drawWave(2, menuTimer, themeCurrent.frontWaveColor, 280, 4.0, -2.5);
     menuTimer += 0.05;
 
-    drawImage(40, 20, 129, 60, themeCurrent.hbmenuLogoImage, IMAGE_MODE_RGBA32);
-    DrawText(interuiregular14, 169, 46 + 18, themeCurrent.textColor, VERSION);
+    drawImage(40, 20, 140, 60, themeCurrent.hbmenuLogoImage, IMAGE_MODE_RGBA32);
+    DrawText(interuiregular14, 184, 46 + 18, themeCurrent.textColor, VERSION);
+    u32 statusXPos = drawStatus();
+
+    #ifdef __SWITCH__
+    AppletType at = appletGetAppletType();
+    if (at != AppletType_Application && at != AppletType_SystemApplication) {
+        const char* appletMode = textGetString(StrId_AppletMode);
+        u32 x_pos = GetTextXCoordinate(interuimedium30, statusXPos, appletMode, 'r');
+        DrawText(interuimedium30, x_pos - 32, 46 + 18, themeCurrent.attentionTextColor, appletMode);
+    }
+    const char* loaderInfo = envGetLoaderInfo();
+    if (loaderInfo) {
+        u32 x_pos = 43;
+        char* spacePos = strchr(loaderInfo, ' ');
+        if (spacePos) {
+            char tempbuf[64] = {0};
+            size_t tempsize = spacePos - loaderInfo + 1;
+            if (tempsize > sizeof(tempbuf)-1) tempsize = sizeof(tempbuf)-1;
+            memcpy(tempbuf, loaderInfo, tempsize);
+            x_pos = GetTextXCoordinate(interuiregular14, 184, tempbuf, 'r');
+        }
+        DrawText(interuiregular14, x_pos, 46 + 18 + 20, themeCurrent.textColor, loaderInfo);
+    }
+    #endif
 
     #ifdef PERF_LOG_DRAW//Seperate from the PERF_LOG define since this might affect perf.
     extern u64 g_tickdiff_frame;
@@ -613,8 +638,6 @@ void menuLoop(void) {
     snprintf(tmpstr, sizeof(tmpstr)-1, "%lu", g_tickdiff_frame);
     DrawText(interuiregular14, 180 + 256, 46 + 16 + 18, themeCurrent.textColor, tmpstr);
     #endif
-
-    drawStatus();
 
     memset(&netloader_state, 0, sizeof(netloader_state));
     netloaderGetState(&netloader_state);
@@ -699,7 +722,7 @@ void menuLoop(void) {
             //DrawText(interuiregular18, getX, 30 + 26 + 32 + 10, themeCurrent.textColor, textGetString(StrId_ThemeMenu));
             //DrawText(fontscale7, getX - 40,  30 + 26 + 32 + 10, themeCurrent.textColor, themeCurrent.buttonMText);
         }
-        
+
         if(active_entry != NULL) {
             if (active_entry->type == ENTRY_TYPE_THEME) {
                 DrawText(fontscale7, 1280 - 126 - 30 - 32, 720 - 47 + 24, themeCurrent.textColor, themeCurrent.buttonAText);
