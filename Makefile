@@ -1,8 +1,8 @@
-export APP_VERSION	:=	3.1.1-shrek
+export APP_VERSION	:=	3.4.0
 
-ifeq ($(RELEASE),)
-	export APP_VERSION	:=	$(APP_VERSION)-$(shell git describe --dirty --always)
-endif
+#ifeq ($(RELEASE),)
+#	export APP_VERSION	:=	$(APP_VERSION)-$(shell git describe --dirty --always)
+#endif
 
 .PHONY: clean all nx pc dist-bin
 

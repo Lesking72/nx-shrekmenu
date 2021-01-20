@@ -35,6 +35,7 @@ static void _menuAddEntry(menu_s *m, menuEntry_s* me) {
         m->lastEntry = me;
     }
     m->xPos = 0;
+    m->slideSpeed = 0;
     m->nEntries ++;
 }
 
@@ -59,6 +60,7 @@ static void menuAddEntryToFront(menuEntry_s* me) {
         m->lastEntry = me;
     }
     m->xPos = 0;
+    m->slideSpeed = 0;
     m->nEntries ++;
 }
 
@@ -176,11 +178,10 @@ int menuScan(const char* target) {
         memset(tmp_path, 0, sizeof(tmp_path));
         snprintf(tmp_path, sizeof(tmp_path)-1, "%s%s%s", s_menu[!s_curMenu].dirname, dirsep, dp->d_name);
 
-        #ifdef __SWITCH__
-        fsdev_dir_t* dirSt = (fsdev_dir_t*)dir->dirData->dirStruct;
-        FsDirectoryEntry* entry = &dirSt->entry_data[dirSt->index];
-
-        entrytype = entry->type == ENTRYTYPE_DIR;
+        #ifdef _DIRENT_HAVE_D_TYPE
+        if (dp->d_type == DT_UNKNOWN)
+            continue;
+        entrytype = dp->d_type != DT_REG;
         #else
         struct stat tmpstat;
 
@@ -208,7 +209,7 @@ int menuScan(const char* target) {
         strncpy(me->path, tmp_path, sizeof(me->path)-1);
         me->path[sizeof(me->path)-1] = 0;
 
-        if (menuEntryLoad(me, dp->d_name, shortcut))
+        if (menuEntryLoad(me, dp->d_name, shortcut, true))
             menuAddEntry(me);
         else
             menuDeleteEntry(me, 0);
@@ -246,7 +247,7 @@ int themeMenuScan(const char* target) {
         snprintf(tmp_path, sizeof(tmp_path)-1, "%s/%s", s_menu[!s_curMenu].dirname, dp->d_name);
 
         const char* ext = getExtension(dp->d_name);
-        if (strcasecmp(ext, ".cfg")==0)
+        if (strcasecmp(ext, ".cfg")==0 || strcasecmp(ext, ".romfs")==0)
             me = menuCreateEntry(ENTRY_TYPE_THEME);
 
         if (!me)
@@ -254,7 +255,7 @@ int themeMenuScan(const char* target) {
 
         strncpy(me->path, tmp_path, sizeof(me->path)-1);
         me->path[sizeof(me->path)-1] = 0;
-        if (menuEntryLoad(me, dp->d_name, shortcut))
+        if (menuEntryLoad(me, dp->d_name, shortcut, true))
             menuAddEntry(me);
         else
             menuDeleteEntry(me, 0);
@@ -266,7 +267,7 @@ int themeMenuScan(const char* target) {
     menuEntry_s* me = menuCreateEntry(ENTRY_TYPE_THEME);
 
     if(me) {
-        if(menuEntryLoad(me, textGetString(StrId_DefaultThemeName), false))//Create Default theme Menu Entry
+        if(menuEntryLoad(me, textGetString(StrId_DefaultThemeName), false, false))//Create Default theme Menu Entry
             menuAddEntryToFront(me);
         else
             menuDeleteEntry(me, 0);
